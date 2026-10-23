@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:check": "drizzle-kit check",
     "db:test": "node scripts/db/test-migrations.mjs drizzle",
-    "db:preflight": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db/preflight.ts"
+    "db:preflight": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db/preflight.ts",
+    "db:verify": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db/verify.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

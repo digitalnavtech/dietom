@@ -2,7 +2,7 @@
 
 > Target: Supabase PostgreSQL, Drizzle ORM schema + migrations, Row Level Security (RLS) where user-scoped access applies.
 >
-> **Status (Step 3):** schema v1 is **written and tested locally, not yet applied** to Supabase:
+> **Status (Step 3):** schema v1 is **applied to Supabase and verified** (`npm run db:verify`):
 > `profiles`, `user_roles`, `dietitian_profiles`, `organizations`, `organization_members`, `client_relationships`, `consents`, `audit_logs`. Migrations: `drizzle/0000_schema_v1.sql` (generated) and `drizzle/0001_security_rls.sql` (hand-written security layer). Everything else below is 🟡 planned.
 >
 > **Decisions made while implementing v1:**

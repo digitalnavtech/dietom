@@ -38,7 +38,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Never run `drizzle-kit push`.** It diffs the live database and could drop the hand-written policies, which aren't in the TypeScript schema.
 - Every new table: `.enableRLS()`, revoke anon/authenticated privileges, grant only what's needed, add policies, and add tests in `scripts/db/test-migrations.mjs`. `npm run db:test` must pass.
 - `getDb()` connects as `postgres` and **bypasses RLS**. Server code using it must authorize in code first.
-- Never print env values. Use `npm run db:preflight` (read-only) before `npm run db:migrate`, and apply to hosted Supabase only with the owner's explicit approval.
+- Never print env values. Use `npm run db:preflight` (read-only) before `npm run db:migrate`, apply to hosted Supabase only with the owner's explicit approval, then run `npm run db:verify` (read-only) and extend it when migrations add tables, policies or grants.
 - Roles are only ever granted by server code. Never read roles or permissions from `raw_user_meta_data` / user metadata.
 
 ## Where things go

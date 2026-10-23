@@ -6,8 +6,8 @@ Each step ends with lint + type-check + build passing, docs updated, and **owner
 | --- | --- | --- |
 | 1 | Foundation: Next.js, Tailwind, shadcn, structure, homepage, docs | ✅ Done |
 | 2 | Shared UI kit and app shells | ✅ Done |
-| 3 | Supabase + Drizzle: schema v1, migrations, RLS | 🔄 In progress: migrations written + tested locally; awaiting a valid `DATABASE_URL` and approval to apply |
-| 4 | Authentication and roles | 🟡 |
+| 3 | Supabase + Drizzle: schema v1, migrations, RLS | ✅ Done (applied to hosted Supabase and verified) |
+| 4 | Authentication and roles | 🟡 Next (proposed) |
 | 5 | Public catalogue pages (pricing, recipes, eBooks) | 🟡 |
 | 6 | Customer dashboard: profile and diet tracker | 🟡 |
 | 7 | Dietitian verification, consent and client management | 🟡 |
@@ -35,7 +35,7 @@ Next.js 16.4.2 + React 19 + TS strict + Tailwind v4 + shadcn/ui (Base UI). Featu
 - Pure list utilities + 19 unit tests on Node's built-in runner.
 - Light/dark/system theme. `robots.ts`, `sitemap.ts`, generated OG/X image, configurable `NEXT_PUBLIC_SITE_URL`, canonical strategy.
 
-### Step 3: Database 🔄
+### Step 3: Database ✅
 Done:
 - Drizzle ORM + drizzle-kit + postgres.js. Lazy, server-only `getDb()`. Zod env validation (`src/server/env.ts`) that never prints values.
 - Schema v1 (8 tables, 7 enums) → `drizzle/0000_schema_v1.sql`.
@@ -43,10 +43,7 @@ Done:
 - `npm run db:test`: 57 checks on an in-memory Postgres 17 (PGlite), including role-escalation attempts and consent revocation.
 - `npm run db:preflight`: read-only connection and conflict check.
 
-Remaining:
-1. Fix `DATABASE_URL` in `.env.local` (it still contains the `YOUR_POOLER_HOST` placeholder).
-2. Run `npm run db:preflight` and review the output.
-3. **With owner approval:** `npm run db:migrate` against the hosted project, then verify in Supabase (Advisors → Security).
+Applied by the owner to the hosted Supabase project (Session pooler) after a clean `db:preflight`, then verified with `npm run db:verify` (read-only): RLS on 8/8 tables, 9/9 policies, 2/2 migrations recorded with matching hashes, signup trigger, append-only audit log, grants and 7 enums: all PASS.
 
 No auth UI in this step. A roles "seed" isn't needed (enum + signup trigger).
 

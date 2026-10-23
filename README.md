@@ -2,7 +2,7 @@
 
 India-first, AI-assisted nutrition SaaS for **individual customers** and **professional dietitians**, with a separate platform admin area. Designed to support international customers later.
 
-> **Status: Step 3 (database) in progress.** Schema v1 + security migrations are written and tested locally but **not yet applied** to Supabase. Step 2 (UI foundation) is complete: the homepage, a shared component kit and **interface previews** of all three dashboards exist. Accounts, real data, payments, AI and email are **planned, not implemented**. Dashboards are public previews with no authentication. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Step 3 (database) complete.** Schema v1 + security migrations are applied to Supabase and verified. No sign-in yet (Step 4). Step 2 (UI foundation) is complete: the homepage, a shared component kit and **interface previews** of all three dashboards exist. Accounts, real data, payments, AI and email are **planned, not implemented**. Dashboards are public previews with no authentication. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Tech stack
 
@@ -14,7 +14,7 @@ India-first, AI-assisted nutrition SaaS for **individual customers** and **profe
 | Forms | React Hook Form 7, Zod 4, @hookform/resolvers 5 | — |
 | Notifications | Sonner (toasts) | Resend, Mailpit (local), background jobs |
 | Testing | Node's built-in test runner (`node --test`); PGlite (in-memory Postgres 17) for migration + RLS tests | Component/E2E tests later |
-| Database | Drizzle ORM 0.45 + drizzle-kit, postgres.js driver, schema v1 migrations with RLS (**written and tested locally, not yet applied**) | — |
+| Database | Drizzle ORM 0.45 + drizzle-kit, postgres.js driver, schema v1 migrations with RLS (applied + verified) | — |
 | Auth | — | Supabase Auth (Step 4) |
 | Payments | — | Razorpay behind a provider abstraction |
 | AI | — | OpenAI API, RAG, usage credits |
@@ -42,6 +42,7 @@ npm run dev                  # http://localhost:3000
 | `npm run db:preflight` | **Read-only** connection + conflict check against `DATABASE_URL` |
 | `npm run db:migrate` | Apply pending migrations to `DATABASE_URL`. Run only after review and approval |
 | `npm run db:check` | Check migration files are consistent |
+| `npm run db:verify` | **Read-only** PASS/FAIL check of RLS, policies, migrations, triggers, grants and enums on `DATABASE_URL` |
 | `npx tsc --noEmit` | Type-check without emitting files |
 
 ### Environment variables
@@ -89,7 +90,7 @@ src/
   lib/                            utils.ts, list-query.ts (+ tests)
   server/                         Server-only: env.ts (validated env), db/ (Drizzle client + schema)
 drizzle/                          SQL migrations (0000 generated, 0001 hand-written security layer)
-scripts/db/                       test-migrations.mjs (PGlite tests), preflight.ts (read-only check)
+scripts/db/                       test-migrations.mjs (PGlite tests), preflight.ts + verify.ts (read-only checks)
 docs/                             Project, architecture, database, security docs and roadmap
 ```
 

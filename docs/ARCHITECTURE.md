@@ -56,8 +56,8 @@ src/
   lib/           ✅ utils.ts (cn), list-query.ts (+ list-query.test.ts)
   server/        ✅ env.ts, env-schema.ts, db/ (Drizzle client + schema v1)
                  🟡 auth guards, payments, ai, email
-drizzle/         ✅ SQL migrations: 0000 generated, 0001 hand-written security layer (not yet applied)
-scripts/db/      ✅ test-migrations.mjs (PGlite + RLS tests), preflight.ts (read-only check)
+drizzle/         ✅ SQL migrations: 0000 generated, 0001 hand-written security layer (applied)
+scripts/db/      ✅ test-migrations.mjs (PGlite + RLS tests), preflight.ts + verify.ts (read-only checks)
 ```
 
 ### Data access model (Step 3)
