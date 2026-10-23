@@ -2,7 +2,7 @@
 
 India-first, AI-assisted nutrition SaaS for **individual customers** and **professional dietitians**, with a separate platform admin area. Designed to support international customers later.
 
-> **Status: Step 2 (UI foundation) complete.** The homepage, a shared component kit and **interface previews** of all three dashboards exist. Accounts, real data, payments, AI and email are **planned, not implemented**. Dashboards are public previews with no authentication. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Step 3 (database) in progress.** Schema v1 + security migrations are written and tested locally but **not yet applied** to Supabase. Step 2 (UI foundation) is complete: the homepage, a shared component kit and **interface previews** of all three dashboards exist. Accounts, real data, payments, AI and email are **planned, not implemented**. Dashboards are public previews with no authentication. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Tech stack
 
@@ -13,8 +13,9 @@ India-first, AI-assisted nutrition SaaS for **individual customers** and **profe
 | Styling | Tailwind CSS v4, shadcn/ui (`base-nova` style on Base UI), Lucide icons, next-themes (light/dark/system) | — |
 | Forms | React Hook Form 7, Zod 4, @hookform/resolvers 5 | — |
 | Notifications | Sonner (toasts) | Resend, Mailpit (local), background jobs |
-| Testing | Node's built-in test runner (`node --test`), no extra dependency | Component/E2E tests later |
-| Auth & DB | — | Supabase Auth, Supabase Postgres, Drizzle ORM, RLS |
+| Testing | Node's built-in test runner (`node --test`); PGlite (in-memory Postgres 17) for migration + RLS tests | Component/E2E tests later |
+| Database | Drizzle ORM 0.45 + drizzle-kit, postgres.js driver, schema v1 migrations with RLS (**written and tested locally, not yet applied**) | — |
+| Auth | — | Supabase Auth (Step 4) |
 | Payments | — | Razorpay behind a provider abstraction |
 | AI | — | OpenAI API, RAG, usage credits |
 | Deployment | — | Docker, Traefik, Hostinger Ubuntu VPS, GitHub Actions |
@@ -36,6 +37,11 @@ npm run dev                  # http://localhost:3000
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint (Next.js core-web-vitals + TypeScript rules) |
 | `npm test` | Unit tests for list utilities (`src/**/*.test.ts`) |
+| `npm run db:test` | Applies all migrations to an in-memory Postgres and checks constraints, triggers and RLS (57 checks). No network |
+| `npm run db:generate` | Generate a migration from schema changes (offline). `-- --custom --name=x` for hand-written SQL |
+| `npm run db:preflight` | **Read-only** connection + conflict check against `DATABASE_URL` |
+| `npm run db:migrate` | Apply pending migrations to `DATABASE_URL`. Run only after review and approval |
+| `npm run db:check` | Check migration files are consistent |
 | `npx tsc --noEmit` | Type-check without emitting files |
 
 ### Environment variables
@@ -43,6 +49,9 @@ npm run dev                  # http://localhost:3000
 | Name | Required | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | No (defaults to `http://localhost:3000`) | Public base URL for canonical links, sitemap, robots and Open Graph. Set it per environment; no production domain is assumed. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes (from Step 3) | `https://<project-ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes (from Step 3) | Publishable (browser-safe) key. Safe only because RLS protects every table |
+| `DATABASE_URL` | Yes for DB work | Postgres connection string (Supabase **Session pooler**). Server-only secret. Logs in as `postgres`, which **bypasses RLS** |
 
 ## What you can try
 
@@ -78,7 +87,9 @@ src/
   config/                         site.ts (brand, SEO URL), dashboard-nav.ts (all dashboard routes)
   features/                       marketing, dashboards, ui-kit (demo-only code + sample data)
   lib/                            utils.ts, list-query.ts (+ tests)
-  server/                         Reserved for server-only code (planned)
+  server/                         Server-only: env.ts (validated env), db/ (Drizzle client + schema)
+drizzle/                          SQL migrations (0000 generated, 0001 hand-written security layer)
+scripts/db/                       test-migrations.mjs (PGlite tests), preflight.ts (read-only check)
 docs/                             Project, architecture, database, security docs and roadmap
 ```
 

@@ -6,7 +6,7 @@ Each step ends with lint + type-check + build passing, docs updated, and **owner
 | --- | --- | --- |
 | 1 | Foundation: Next.js, Tailwind, shadcn, structure, homepage, docs | ✅ Done |
 | 2 | Shared UI kit and app shells | ✅ Done |
-| 3 | Supabase + Drizzle: schema v1, migrations, RLS | 🟡 Next (proposed) |
+| 3 | Supabase + Drizzle: schema v1, migrations, RLS | 🔄 In progress: migrations written + tested locally; awaiting a valid `DATABASE_URL` and approval to apply |
 | 4 | Authentication and roles | 🟡 |
 | 5 | Public catalogue pages (pricing, recipes, eBooks) | 🟡 |
 | 6 | Customer dashboard: profile and diet tracker | 🟡 |
@@ -35,8 +35,20 @@ Next.js 16.4.2 + React 19 + TS strict + Tailwind v4 + shadcn/ui (Base UI). Featu
 - Pure list utilities + 19 unit tests on Node's built-in runner.
 - Light/dark/system theme. `robots.ts`, `sitemap.ts`, generated OG/X image, configurable `NEXT_PUBLIC_SITE_URL`, canonical strategy.
 
-### Step 3: Database (proposed next)
-Supabase project, Drizzle config, schema v1 from [DATABASE_PLAN.md](DATABASE_PLAN.md) (start with identity, roles, profiles, organizations, relationships/consent, audit log), migrations, RLS policies, seed script for roles. Env validation with Zod (`src/server/env.ts`). No auth UI yet.
+### Step 3: Database 🔄
+Done:
+- Drizzle ORM + drizzle-kit + postgres.js. Lazy, server-only `getDb()`. Zod env validation (`src/server/env.ts`) that never prints values.
+- Schema v1 (8 tables, 7 enums) → `drizzle/0000_schema_v1.sql`.
+- Hand-written security layer → `drizzle/0001_security_rls.sql`: private helper functions, signup trigger (always `customer`), table grants, RLS policies, append-only audit log.
+- `npm run db:test`: 57 checks on an in-memory Postgres 17 (PGlite), including role-escalation attempts and consent revocation.
+- `npm run db:preflight`: read-only connection and conflict check.
+
+Remaining:
+1. Fix `DATABASE_URL` in `.env.local` (it still contains the `YOUR_POOLER_HOST` placeholder).
+2. Run `npm run db:preflight` and review the output.
+3. **With owner approval:** `npm run db:migrate` against the hosted project, then verify in Supabase (Advisors → Security).
+
+No auth UI in this step. A roles "seed" isn't needed (enum + signup trigger).
 
 ### Step 4: Auth and roles
 Supabase Auth (email + OTP/magic link, Google later), `proxy.ts` session refresh, server guards, sign-in/up pages, role-based redirects. Customer role by default; dietitian applicants get a pending state.

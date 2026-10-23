@@ -54,8 +54,26 @@ src/
     ui-kit/      ✅ Demo-only: form schema, demo components, FICTIONAL sample eBooks
     auth/ billing/ tracker/ meal-plans/ recipes/ ebooks/ quizzes/ ai/ admin/ notifications/   🟡
   lib/           ✅ utils.ts (cn), list-query.ts (+ list-query.test.ts)
-  server/        🟡 server-only code: db client, auth guards, payments, ai, env
+  server/        ✅ env.ts, env-schema.ts, db/ (Drizzle client + schema v1)
+                 🟡 auth guards, payments, ai, email
+drizzle/         ✅ SQL migrations: 0000 generated, 0001 hand-written security layer (not yet applied)
+scripts/db/      ✅ test-migrations.mjs (PGlite + RLS tests), preflight.ts (read-only check)
 ```
+
+### Data access model (Step 3)
+
+```
+Browser ──(publishable key + user JWT)──► Supabase Data API ──► RLS policies apply
+                                            anon: no table access
+                                            authenticated: read own / org / consented rows,
+                                                           edit 5 own-profile columns
+
+Next.js server ──(DATABASE_URL, role "postgres")──► Postgres   ⚠ bypasses RLS
+                    getDb() in src/server/db           → every caller authorizes in code
+                                                         (Step 4 guards), then writes
+```
+
+RLS is the safety net for anything reachable from the browser. The server is the only writer. In Step 4, guards (`requireUser`, `requireRole`, `requireClientAccess`) run before any `getDb()` call. If a future feature needs per-user RLS on server queries, a `withUserContext()` helper can run a transaction as `authenticated` with the user's JWT claims.
 
 ### Why feature-based?
 

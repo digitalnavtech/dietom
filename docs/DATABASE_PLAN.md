@@ -1,6 +1,17 @@
 # Database Plan
 
-> 🟡 **Planned. Nothing here is implemented yet.** Target: Supabase PostgreSQL, Drizzle ORM schema + migrations, Row Level Security (RLS) where user-scoped access applies.
+> Target: Supabase PostgreSQL, Drizzle ORM schema + migrations, Row Level Security (RLS) where user-scoped access applies.
+>
+> **Status (Step 3):** schema v1 is **written and tested locally, not yet applied** to Supabase:
+> `profiles`, `user_roles`, `dietitian_profiles`, `organizations`, `organization_members`, `client_relationships`, `consents`, `audit_logs`. Migrations: `drizzle/0000_schema_v1.sql` (generated) and `drizzle/0001_security_rls.sql` (hand-written security layer). Everything else below is 🟡 planned.
+>
+> **Decisions made while implementing v1:**
+> - The `users` entity is implemented as **`profiles`** (Supabase convention, avoids confusion with `auth.users`). Email is **not copied** into it; `auth.users` stays the single source.
+> - Roles are a Postgres enum (`app_role`), so there's nothing to seed. A signup trigger creates the profile and the `customer` role. The first `super_admin` will be granted with a one-off, reviewed SQL statement in Step 4.
+> - `dietitian_profiles` gained `submitted_at` and `decision_reason`. `verification_documents` is deferred to Step 7 (needs a private storage bucket).
+> - `consents` references `(relationship_id, client_user_id)` together, so a consent's client must equal the relationship's client.
+> - `audit_logs` has **no foreign keys** (the log must outlive users) and a trigger blocks UPDATE/DELETE/TRUNCATE.
+> - **Write model:** signed-in users can only *read* through the Data API (plus editing 5 columns of their own profile). All other writes go through server code using Drizzle, which authorizes in code.
 
 ## 1. Conventions
 

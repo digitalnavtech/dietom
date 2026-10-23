@@ -31,6 +31,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Reading `searchParams`, `cookies()` or `headers()` makes that component dynamic. With Cache Components it must sit inside `<Suspense>` (see `app/(marketing)/ui-kit/page.tsx`).
 - Components (e.g. Lucide icons) can't be passed as props from Server to Client Components. Pass a key and look up config on the client (see `DashboardNavLinks`).
 
+## Database rules (Step 3+)
+
+- Schema lives in `src/server/db/schema/*.ts`. Change it, then `npm run db:generate -- --name=<what>`. Never hand-edit generated migrations, and never edit a migration that has been applied anywhere; add a new one.
+- Policies, grants, triggers and functions go in **hand-written** migrations (`npm run db:generate -- --custom --name=<what>`), separated by `--> statement-breakpoint`. Helper functions live in the `private` schema, `SECURITY DEFINER`, `SET search_path = ''`.
+- **Never run `drizzle-kit push`.** It diffs the live database and could drop the hand-written policies, which aren't in the TypeScript schema.
+- Every new table: `.enableRLS()`, revoke anon/authenticated privileges, grant only what's needed, add policies, and add tests in `scripts/db/test-migrations.mjs`. `npm run db:test` must pass.
+- `getDb()` connects as `postgres` and **bypasses RLS**. Server code using it must authorize in code first.
+- Never print env values. Use `npm run db:preflight` (read-only) before `npm run db:migrate`, and apply to hosted Supabase only with the owner's explicit approval.
+- Roles are only ever granted by server code. Never read roles or permissions from `raw_user_meta_data` / user metadata.
+
 ## Where things go
 
 | What | Where |
@@ -71,4 +81,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Before finishing any change
 
-Run `npm run lint`, `npm test`, `npx tsc --noEmit` and `npm run build`. All must pass. Don't claim browser testing unless it was actually performed.
+Run `npm run lint`, `npm test`, `npm run db:test`, `npx tsc --noEmit` and `npm run build`. All must pass. Don't claim browser testing unless it was actually performed.
