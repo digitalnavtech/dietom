@@ -54,7 +54,10 @@ src/
     ui-kit/      ✅ Demo-only: form schema, demo components, FICTIONAL sample eBooks
     auth/ billing/ tracker/ meal-plans/ recipes/ ebooks/ quizzes/ ai/ admin/ notifications/   🟡
   lib/           ✅ utils.ts (cn), list-query.ts (+ list-query.test.ts)
-  server/        ✅ env.ts, env-schema.ts, db/ (Drizzle client + schema v1)
+  proxy.ts       ✅ Session refresh only (Phase 4A)
+  lib/supabase/  ✅ client.ts (browser), public-env.ts, update-session.ts, auth-cookies.ts
+  server/        ✅ env.ts, env-schema.ts, db/ (Drizzle client + schema v1),
+                    supabase/server.ts, auth/ (verify-user, access, session, errors)
                  🟡 auth guards, payments, ai, email
 drizzle/         ✅ SQL migrations: 0000 generated, 0001 hand-written security layer (applied)
 scripts/db/      ✅ test-migrations.mjs (PGlite + RLS tests), preflight.ts + verify.ts (read-only checks)
@@ -216,11 +219,44 @@ const [rows, [{ total }]] = await Promise.all([
 - Preview routes (`/dashboard`, `/dietitian`, `/admin`, `/ui-kit`): `noindex, nofollow` meta + `robots.txt` disallow + excluded from `sitemap.xml`. Not linked from the public nav.
 - Pending: a designed social image with brand font/illustration (current one is generated text).
 
-## 11. Role-based access plan (Step 4)
+## 11. Authentication and role-based access (Step 4)
 
-Nothing below is implemented. Today every dashboard is a public preview.
+### Phase 4A: authentication foundation ✅
 
-1. **Session:** Supabase Auth cookies. `src/proxy.ts` (Next.js 16's name for middleware) refreshes the session and redirects signed-out visitors away from `/dashboard`, `/dietitian`, `/admin`. That's a convenience, **not** the security boundary.
+```
+Browser ──cookie sb-<ref>-auth-token──► src/proxy.ts (every page request)
+                                          │ no Supabase cookie? → pass through (no auth work)
+                                          │ else updateSession(): getClaims()
+                                          │   verifies the JWT locally (project uses ES256 keys)
+                                          │   refreshes it if expired → Set-Cookie + no-store headers
+                                          │   invalid/garbage cookie → cleared
+                                          ▼
+                       Server Component / Server Action / Route Handler
+                          getAuthUser()      → supabase.auth.getUser()  (asks the Auth server;
+                                                fails closed → null; narrow AuthUser, no metadata)
+                          getAccessContext() → profiles.status + user_roles + dietitian_profiles
+                                                from OUR database via Drizzle (fail-closed)
+```
+
+| Client | File | Key | Use |
+| --- | --- | --- | --- |
+| Browser | `src/lib/supabase/client.ts` | publishable | Client Components (sign-in forms in 4B). Never trusted for authorization |
+| Server | `src/server/supabase/server.ts` | publishable + user cookies | Server code acting as the user (RLS applies) |
+| Proxy | `src/lib/supabase/update-session.ts` | publishable | Session refresh only |
+| Drizzle | `src/server/db/index.ts` | `DATABASE_URL` (postgres) | Privileged; only after server-side checks |
+
+Rules:
+- **Identity** = `getAuthUser()` (Auth server verified). Never `getSession()`, never cookie contents, never `user_metadata`.
+- **Roles** = `getAccessContext()` from our tables. A suspended/deleted profile has no roles. Unknown role strings are ignored. "Verified dietitian" = dietitian role **and** approved verification.
+- Both helpers use React `cache()` (once per request) and read cookies, so callers render inside `<Suspense>` under Cache Components. They are never cached across requests.
+- `getSupabasePublicEnv()` refuses `sb_secret_…` and `service_role` JWTs in public variables. The service-role key isn't used anywhere.
+- Verified on the production build: signed-out requests get no cookies and stay cacheable; garbage session cookies are cleared with `no-store`; a forged `service_role` JWT is rejected by the Auth server (403).
+
+### Phase 4B: plan (not implemented)
+
+Today every dashboard is still a public preview.
+
+1. **Session:** `src/proxy.ts` additionally redirects signed-out visitors away from `/dashboard`, `/dietitian`, `/admin`. That's a convenience, **not** the security boundary.
 2. **Layout guards (real boundary for pages):**
    - `(customer)/layout.tsx` → `await requireRole("customer")`
    - `(dietitian)/layout.tsx` → `await requireRole("dietitian")`. Pages with client data also call `requireVerifiedDietitian()`

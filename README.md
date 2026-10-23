@@ -15,7 +15,7 @@ India-first, AI-assisted nutrition SaaS for **individual customers** and **profe
 | Notifications | Sonner (toasts) | Resend, Mailpit (local), background jobs |
 | Testing | Node's built-in test runner (`node --test`); PGlite (in-memory Postgres 17) for migration + RLS tests | Component/E2E tests later |
 | Database | Drizzle ORM 0.45 + drizzle-kit, postgres.js driver, schema v1 migrations with RLS (applied + verified) | — |
-| Auth | — | Supabase Auth (Step 4) |
+| Auth | @supabase/ssr 0.12 + supabase-js 2.117: browser/server clients, session-refresh proxy, server identity helpers (**Phase 4A**, no sign-in UI yet) | Sign-in/up UI and route protection (Phase 4B) |
 | Payments | — | Razorpay behind a provider abstraction |
 | AI | — | OpenAI API, RAG, usage credits |
 | Deployment | — | Docker, Traefik, Hostinger Ubuntu VPS, GitHub Actions |
@@ -88,7 +88,9 @@ src/
   config/                         site.ts (brand, SEO URL), dashboard-nav.ts (all dashboard routes)
   features/                       marketing, dashboards, ui-kit (demo-only code + sample data)
   lib/                            utils.ts, list-query.ts (+ tests)
-  server/                         Server-only: env.ts (validated env), db/ (Drizzle client + schema)
+  proxy.ts                        Next.js 16 Proxy: refreshes the Supabase session (no redirects yet)
+  lib/supabase/                   Browser client, public env check, session refresh, cookie helpers
+  server/                         Server-only: env.ts, db/ (Drizzle), supabase/ (server client), auth/ (identity helpers)
 drizzle/                          SQL migrations (0000 generated, 0001 hand-written security layer)
 scripts/db/                       test-migrations.mjs (PGlite tests), preflight.ts + verify.ts (read-only checks)
 docs/                             Project, architecture, database, security docs and roadmap

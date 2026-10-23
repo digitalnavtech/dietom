@@ -15,7 +15,7 @@
 
 ## 2. Authentication and sessions
 - Supabase Auth, sessions in **HTTP-only, Secure, SameSite=Lax** cookies. No tokens in `localStorage`.
-- Session refresh in `proxy.ts`. Server code always revalidates the user (`getUser()`, which contacts the auth server) instead of trusting unverified cookie contents.
+- Session refresh in `proxy.ts`. Server code always revalidates the user (`getUser()`, which contacts the auth server) instead of trusting unverified cookie contents. ✅ Implemented in Phase 4A (`src/proxy.ts`, `src/server/auth/session.ts`); verified that forged and garbage sessions are rejected.
 - Rate-limit sign-in, sign-up, OTP and password reset. Optional MFA for dietitians, mandatory MFA for admins.
 
 ## 3. Authorization
@@ -73,9 +73,15 @@ Append-only `audit_logs` for: role changes, dietitian verification decisions, co
 - WCAG 2.2 AA target: semantic HTML, labelled landmarks, keyboard navigation, visible focus, colour contrast, reduced-motion support.
 - Public pages: metadata, Open Graph, `sitemap.ts`, `robots.ts`, structured data where useful. Private pages: `noindex`.
 
-## 13. Current status (after Step 2)
+## 13. Current status (after Step 4A)
 ✅ No secrets, no data collection, no third-party scripts. ✅ Skip link, semantic landmarks, focus styles, reduced-motion respected. ✅ The demo form keeps input in the browser tab only and asks users not to enter health details.
 
 ⚠ Correction to the Step 1 note: `shadcn init` had added the `shadcn` CLI to production `dependencies`, which made `npm audit --omit=dev` report a high-severity `braces` advisory (via `fast-glob`). The app only imports `shadcn/tailwind.css` at build time, so `shadcn` was moved to `devDependencies` in Step 2. The production audit now reports 0 vulnerabilities. The remaining advisories are in dev-only tooling and never shipped.
 
 ⚠ Dashboard routes are **public previews** with no access control. They must contain no real or realistic personal data until Step 4 adds server-side guards.
+
+✅ Step 3: RLS on all 8 tables, 9 read-side policies, append-only audit log; Supabase Security Advisor: 0 issues.
+
+✅ Step 4A: session handling as described in §2. Public env validation refuses secret/service-role keys in `NEXT_PUBLIC_*`. The service-role key is not used anywhere. Browser bundles scanned: no `DATABASE_URL`, secret keys or server-only modules.
+
+⚠ Still open until Phase 4B: no sign-in UI, no route protection (dashboards remain public previews), no rate limiting on auth endpoints beyond Supabase's built-in limits.

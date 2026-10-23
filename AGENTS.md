@@ -41,6 +41,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Never print env values. Use `npm run db:preflight` (read-only) before `npm run db:migrate`, apply to hosted Supabase only with the owner's explicit approval, then run `npm run db:verify` (read-only) and extend it when migrations add tables, policies or grants.
 - Roles are only ever granted by server code. Never read roles or permissions from `raw_user_meta_data` / user metadata.
 
+## Authentication rules (Step 4+)
+
+- Identity: `getAuthUser()` / `requireAuthUser()` from `src/server/auth/session.ts` (uses `supabase.auth.getUser()`). Never use `getSession()` or decoded cookies/JWTs as proof of identity on the server.
+- Roles and status: `getAccessContext()` (our DB). Never read roles from `user_metadata`, `app_metadata`, JWT claims, cookies or request input.
+- New Supabase clients: browser → `createSupabaseBrowserClient()`; server → `await createSupabaseServerClient()` (new one per request). Never create a client with a secret/service-role key in code that can reach the browser.
+- `src/proxy.ts` only refreshes sessions (and, from 4B, optimistic redirects). Real authorization lives in server code next to the data.
+- Code calling auth helpers reads cookies, so render it inside `<Suspense>` (Cache Components). Don't add `"use cache"` to anything that returns user-specific data.
+- Never log tokens, cookies, emails or error objects from auth calls; log `error.name` only.
+
 ## Where things go
 
 | What | Where |
