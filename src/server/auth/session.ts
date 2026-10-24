@@ -1,6 +1,7 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import { getDb } from "@/server/db";
@@ -19,6 +20,11 @@ import { verifyUser, type AuthUser } from "./verify-user";
 
 // The verified user, or null if not signed in (or the session is invalid).
 export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
+  // With Partial Prefetching, reading cookies() alone doesn't stop prerendering
+  // (Next builds a per-session App Shell). Supabase checks token expiry with
+  // Date.now() and calls the Auth server, so stop here and run at request
+  // time. This also keeps auth results out of any prefetched/cached shell.
+  await connection();
   const supabase = await createSupabaseServerClient();
   return verifyUser(supabase.auth);
 });
