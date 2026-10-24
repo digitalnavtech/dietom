@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { MobileDashboardNavigation } from "@/components/dashboard/mobile-dashboard-navigation";
+import { UserMenu } from "@/components/dashboard/user-menu";
 import { PreviewNotice } from "@/components/shared/preview-notice";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
@@ -33,6 +35,10 @@ export function DashboardShell({
           <MobileDashboardNavigation area={area} />
           <p className="truncate text-sm font-medium md:hidden">{config.label}</p>
           <div className="ml-auto flex items-center gap-1">
+            {/* Reads the session: streams in after the static shell. */}
+            <Suspense fallback={null}>
+              <UserMenu />
+            </Suspense>
             <ThemeToggle />
             <Link
               href="/"

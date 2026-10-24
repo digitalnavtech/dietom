@@ -4,10 +4,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
 export const PREVIEW_MESSAGE =
-  "Interface preview — authentication and live data are not connected yet.";
+  "Interface preview — sign-in works, but live data is not connected yet.";
 
-// Shown on every Step 2 dashboard page. role="note" overrides the Alert's
-// default role="alert", which would make screen readers interrupt on every page.
+// Shown on every dashboard page until real features replace the previews.
+// role="note" overrides the Alert's default role="alert", which would make
+// screen readers interrupt on every page.
 export function PreviewNotice({
   message = PREVIEW_MESSAGE,
   className,

@@ -7,7 +7,7 @@ Each step ends with lint + type-check + build passing, docs updated, and **owner
 | 1 | Foundation: Next.js, Tailwind, shadcn, structure, homepage, docs | ✅ Done |
 | 2 | Shared UI kit and app shells | ✅ Done |
 | 3 | Supabase + Drizzle: schema v1, migrations, RLS | ✅ Done (applied to hosted Supabase and verified) |
-| 4 | Authentication and roles | 🔄 4A (auth foundation) done; 4B (sign-in UI + route protection) next |
+| 4 | Authentication and roles | 🔄 4A + 4B done on `step-4-authentication` (awaiting manual Supabase testing + approval) |
 | 5 | Public catalogue pages (pricing, recipes, eBooks) | 🟡 |
 | 6 | Customer dashboard: profile and diet tracker | 🟡 |
 | 7 | Dietitian verification, consent and client management | 🟡 |
@@ -50,7 +50,7 @@ No auth UI in this step. A roles "seed" isn't needed (enum + signup trigger).
 ### Step 4: Auth and roles
 **4A, Authentication foundation ✅:** `@supabase/ssr` browser + server clients, `src/proxy.ts` session refresh (skips signed-out visitors; no-store headers on refresh), server helpers `getAuthUser` (verified with the Auth server), `requireAuthUser`, `getAccessContext` (roles/status from our DB, fail-closed). Public env check refuses secret keys. 28 new unit tests; forged and garbage sessions verified to be rejected.
 
-**4B, next (proposed):** sign-in / sign-up / sign-out (email + password and/or magic link), auth callback route, safe post-login redirects, role-based protection of `/dashboard`, `/dietitian`, `/admin` (server guards in layouts, optimistic redirect in proxy), dietitian application state. Customer role by default.
+**4B, Sign-in and role-based access ✅:** `/sign-up`, `/sign-in`, `/forgot-password`, `/reset-password`, `/auth/confirm` (token_hash + PKCE), `/auth/error`; Server Actions with shared Zod schemas; no account enumeration; safe redirects; reset requires a verified recovery link; global sign-out after reset. Every dashboard page gated on the server (`AreaGate`) + optimistic proxy redirects. 47 new unit tests and runtime checks (unauthenticated, expired/forged sessions, link handling, redirect manipulation). Manual end-to-end testing with real accounts still required.
 
 ### Steps 5–15
 Built feature by feature, each with its own schema additions, server actions, Zod schemas, UI and tests.

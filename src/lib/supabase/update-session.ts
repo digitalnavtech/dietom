@@ -4,6 +4,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabaseAuthCookie } from "@/lib/supabase/auth-cookies";
 import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
 
+export type SessionState = {
+  response: NextResponse;
+  // A valid, signature-checked access token is present (after any refresh).
+  hasSession: boolean;
+  // The request carried Supabase cookies (so a missing session = expired/invalid).
+  hadAuthCookie: boolean;
+};
+
 // Called by src/proxy.ts on every page request.
 //
 // Job: keep the session cookie fresh. Supabase access tokens are short-lived;
@@ -12,13 +20,12 @@ import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
 // this same request see the fresh session) and the response (so the browser
 // stores it).
 //
-// It does NOT decide who may see what. That happens on the server, next to
-// the data (src/server/auth). The proxy is an optimization, not a security
-// boundary.
-export async function updateSession(request: NextRequest): Promise<NextResponse> {
+// `hasSession` is only good enough for OPTIMISTIC redirects. Real
+// authorization happens on the server next to the data (src/server/auth).
+export async function updateSession(request: NextRequest): Promise<SessionState> {
   // Signed-out visitors have nothing to refresh. Skip all auth work.
   if (!hasSupabaseAuthCookie(request.cookies.getAll())) {
-    return NextResponse.next({ request });
+    return { response: NextResponse.next({ request }), hasSession: false, hadAuthCookie: false };
   }
 
   let response = NextResponse.next({ request });
@@ -47,8 +54,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // Keep this call directly after createServerClient. It verifies the access
   // token's signature (locally, via the project's public JWKS, when asymmetric
   // signing keys are enabled) and refreshes it if expired.
+  let hasSession = false;
   try {
-    await supabase.auth.getClaims();
+    const { data, error } = await supabase.auth.getClaims();
+    hasSession = !error && Boolean(data?.claims?.sub);
   } catch (error) {
     // Never log the error object itself: it could carry request details.
     console.error(
@@ -56,5 +65,14 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     );
   }
 
-  return response;
+  return { response, hasSession, hadAuthCookie: true };
+}
+
+// Redirect that keeps any cookies/headers the refresh step set (e.g. cleared
+// invalid cookies), so they aren't lost on the way.
+export function redirectWithSession(state: SessionState, url: URL): NextResponse {
+  const redirect = NextResponse.redirect(url);
+  for (const cookie of state.response.cookies.getAll()) redirect.cookies.set(cookie);
+  redirect.headers.set("Cache-Control", "private, no-store");
+  return redirect;
 }

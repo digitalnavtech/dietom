@@ -4,7 +4,8 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { previewRobots } from "@/features/dashboards/metadata";
 
 // Route group "(admin)": its own layout, no effect on URLs.
-// Step 2: public interface preview. No authentication or role check yet.
+// Access is checked on the server by each page (AreaGate), not here: layouts
+// don't re-run on every navigation, so they are not a reliable gate.
 export const metadata: Metadata = { robots: previewRobots };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

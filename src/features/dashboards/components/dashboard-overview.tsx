@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowRight } from "lucide-react";
 
+import { AreaGate } from "@/components/dashboard/area-gate";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
 import { PlannedBadge } from "@/components/shared/planned-badge";
 import { Card, CardDescription, CardHeader } from "@/components/ui/card";
 import { dashboardConfigs, type DashboardArea } from "@/config/dashboard-nav";
@@ -15,8 +18,19 @@ const intro: Record<DashboardArea, string> = {
     "Where Dietom staff will manage users, verifications, the catalogue and payments.",
 };
 
-// Area home page: explains each section instead of showing invented numbers.
+// Area home page, gated per page like every other dashboard page.
 export function DashboardOverview({ area }: { area: DashboardArea }) {
+  return (
+    <Suspense fallback={<LoadingSkeleton variant="cards" count={6} label="Checking access" />}>
+      <AreaGate area={area}>
+        <OverviewContent area={area} />
+      </AreaGate>
+    </Suspense>
+  );
+}
+
+// Explains each section instead of showing invented numbers.
+function OverviewContent({ area }: { area: DashboardArea }) {
   const config = dashboardConfigs[area];
   const sections = config.nav.filter((item) => item.href !== config.homeHref);
 

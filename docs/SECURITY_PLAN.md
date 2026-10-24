@@ -84,4 +84,6 @@ Append-only `audit_logs` for: role changes, dietitian verification decisions, co
 
 ✅ Step 4A: session handling as described in §2. Public env validation refuses secret/service-role keys in `NEXT_PUBLIC_*`. The service-role key is not used anywhere. Browser bundles scanned: no `DATABASE_URL`, secret keys or server-only modules.
 
-⚠ Still open until Phase 4B: no sign-in UI, no route protection (dashboards remain public previews), no rate limiting on auth endpoints beyond Supabase's built-in limits.
+✅ Step 4B: sign-in/up/out, email confirmation, password reset; every dashboard page authorizes on the server; safe redirects; no account enumeration; reset requires a verified recovery link and signs out all sessions.
+
+⚠ Still open: rate limiting relies on Supabase's built-in limits (no app-level limiter or CAPTCHA yet); no MFA; end-to-end flows not yet tested with real accounts; Supabase's built-in email sender is rate-limited (custom SMTP needed before launch).

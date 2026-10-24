@@ -240,7 +240,7 @@ Browser ──cookie sb-<ref>-auth-token──► src/proxy.ts (every page reque
 
 | Client | File | Key | Use |
 | --- | --- | --- | --- |
-| Browser | `src/lib/supabase/client.ts` | publishable | Client Components (sign-in forms in 4B). Never trusted for authorization |
+| Browser | `src/lib/supabase/client.ts` | publishable | Client Components if ever needed (auth forms use Server Actions). Never trusted for authorization |
 | Server | `src/server/supabase/server.ts` | publishable + user cookies | Server code acting as the user (RLS applies) |
 | Proxy | `src/lib/supabase/update-session.ts` | publishable | Session refresh only |
 | Drizzle | `src/server/db/index.ts` | `DATABASE_URL` (postgres) | Privileged; only after server-side checks |
@@ -252,25 +252,49 @@ Rules:
 - `getSupabasePublicEnv()` refuses `sb_secret_…` and `service_role` JWTs in public variables. The service-role key isn't used anywhere.
 - Verified on the production build: signed-out requests get no cookies and stay cacheable; garbage session cookies are cleared with `no-store`; a forged `service_role` JWT is rejected by the Auth server (403).
 
-### Phase 4B: plan (not implemented)
+### Phase 4B: sign-in and role-based access ✅
 
-Today every dashboard is still a public preview.
+**Routes** (route group `(auth)`, all `noindex`):
 
-1. **Session:** `src/proxy.ts` additionally redirects signed-out visitors away from `/dashboard`, `/dietitian`, `/admin`. That's a convenience, **not** the security boundary.
-2. **Layout guards (real boundary for pages):**
-   - `(customer)/layout.tsx` → `await requireRole("customer")`
-   - `(dietitian)/layout.tsx` → `await requireRole("dietitian")`. Pages with client data also call `requireVerifiedDietitian()`
-   - `(admin)/layout.tsx` → `await requireRole(["admin", "super_admin"])`
-3. **Every server action / route handler / query re-checks**, because layouts don't protect actions, and data access must check ownership (`requireClientAccess(clientId, scope)`).
-4. With Cache Components, guards read cookies, so the guarded part renders inside `<Suspense>`. The static shell (sidebar) stays prerendered without user data.
-5. Navigation can hide links a user can't use, but hiding is UX. The server decides.
-6. Roles come from `user_roles`. Multi-role users get an area switcher in the shell.
+| Route | Purpose |
+| --- | --- |
+| `/sign-up` | Name, email, password (min 8, letters + digits). Always answers "check your inbox" (no account enumeration). New users get only `customer` via the DB trigger |
+| `/sign-in` | Email + password. Unconfirmed emails get a "resend confirmation" option. `?next=` is validated by `getSafeRedirectPath()` on the server |
+| `/forgot-password` | Sends a reset link. Same answer whether or not the account exists |
+| `/reset-password` | New password without the old one. Allowed only with the session from a verified recovery link **plus** an httpOnly recovery marker bound to that user. Then signs out all sessions |
+| `/auth/confirm` | Route handler for every email link: `token_hash` + `type` (verifyOtp) or PKCE `code`. Allowed types: signup, email, recovery, email_change. Expired/invalid → `/auth/error` |
+| `/auth/error` | Allowlisted codes only (`link_expired`, `link_invalid`, …), so it never displays attacker text |
+| Sign-out | `<form action={signOutAction}>` (POST only, no GET sign-out) |
+
+**Server Actions** (`src/features/auth/actions.ts`) re-validate with the shared Zod schemas (no role fields; unknown keys stripped), map Supabase error codes to safe text (`authErrorMessage`), log only error codes, and build email links from `siteConfig.url` (never the Host header). Supabase also enforces its redirect allowlist.
+
+**Dashboard authorization** (defence in depth):
+
+```
+proxy.ts          optimistic: no valid session on a protected path → /sign-in?next=…
+                  (expired/invalid cookie → &status=session_expired; cookies cleared)
+each page         <Suspense><AreaGate area>  → getAreaAccess() → decideAreaAccess()
+                     unauthenticated → redirect /sign-in
+                     inactive / forbidden / unverified_dietitian → AccessDenied (content never rendered)
+actions/handlers  requireAreaAccess(area) → throws AuthenticationRequiredError / AuthorizationError
+```
+
+| Area | Rule (`decideAreaAccess`) |
+| --- | --- |
+| Customer | active account + `customer` role |
+| Dietitian | active + `dietitian` role + verification `approved` |
+| Admin | active + `admin` **or** `super_admin` |
+
+- The check runs in **every page** (not the layout): layouts aren't re-run on every navigation, and segments can be prefetched separately. Build output confirms the static shells contain only the sidebar and a "Checking access" skeleton.
+- Roles always come from our tables via `getAccessContext()`. A suspended or deleted account loses every area immediately.
+- No dashboard Server Actions or API routes exist yet. When added, each must call `requireAreaAccess()`.
+- Still to come: `requireClientAccess(clientId, scope)` for client data (Step 7), and an area switcher for multi-role users.
 
 ## 12. UI-only previews (honesty list)
 
 | Feature | Status |
 | --- | --- |
-| Dashboard pages (19) | 👁 Layout and navigation only. No data, no auth |
+| Dashboard pages (19) | 👁 Sign-in + role checks are real (Step 4B); page content is still a preview with no data |
 | Newsletter-interest form (`/ui-kit`) | 👁 Validates in the browser. Never saved or sent |
 | Toast examples (`/ui-kit`) | 👁 Labelled "Demo" |
 | eBook catalogue (`/ui-kit`) | 👁 14 fictional sample entries, no prices, not for sale |

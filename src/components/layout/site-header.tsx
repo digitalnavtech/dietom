@@ -1,7 +1,9 @@
+import Link from "next/link";
+
 import { Logo } from "@/components/layout/logo";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { PlannedBadge } from "@/components/shared/planned-badge";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { buttonVariants } from "@/components/ui/button";
 import { mainNav } from "@/config/site";
 
 export function SiteHeader() {
@@ -26,10 +28,14 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Sign-in is not built yet (Step 2+). We show status instead of a fake button. */}
-          <span className="hidden sm:inline-flex">
-            <PlannedBadge label="Sign-in coming soon" />
-          </span>
+          {/* Static links: the header never reads the session, so the homepage
+              stays fully static. Signed-in users are sent on from /sign-in. */}
+          <Link href="/sign-in" className={buttonVariants({ variant: "ghost", className: "hidden sm:inline-flex" })}>
+            Sign in
+          </Link>
+          <Link href="/sign-up" className={buttonVariants({ className: "hidden sm:inline-flex" })}>
+            Create account
+          </Link>
           <ThemeToggle />
           <MobileNav />
         </div>

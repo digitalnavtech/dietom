@@ -2,7 +2,7 @@
 
 India-first, AI-assisted nutrition SaaS for **individual customers** and **professional dietitians**, with a separate platform admin area. Designed to support international customers later.
 
-> **Status: Step 3 (database) complete.** Schema v1 + security migrations are applied to Supabase and verified. No sign-in yet (Step 4). Step 2 (UI foundation) is complete: the homepage, a shared component kit and **interface previews** of all three dashboards exist. Accounts, real data, payments, AI and email are **planned, not implemented**. Dashboards are public previews with no authentication. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Step 4B (sign-in + role-based access) implemented on `step-4-authentication`.** Users can register, confirm their email, sign in/out and reset their password; dashboards require the right role (server-checked on every page). Dashboard *content* is still a preview. Step 3 (database) is complete. Step 2 (UI foundation) is complete: the homepage, a shared component kit and **interface previews** of all three dashboards exist. Accounts, real data, payments, AI and email are **planned, not implemented**. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Tech stack
 
@@ -15,7 +15,7 @@ India-first, AI-assisted nutrition SaaS for **individual customers** and **profe
 | Notifications | Sonner (toasts) | Resend, Mailpit (local), background jobs |
 | Testing | Node's built-in test runner (`node --test`); PGlite (in-memory Postgres 17) for migration + RLS tests | Component/E2E tests later |
 | Database | Drizzle ORM 0.45 + drizzle-kit, postgres.js driver, schema v1 migrations with RLS (applied + verified) | — |
-| Auth | @supabase/ssr 0.12 + supabase-js 2.117: browser/server clients, session-refresh proxy, server identity helpers (**Phase 4A**, no sign-in UI yet) | Sign-in/up UI and route protection (Phase 4B) |
+| Auth | Supabase Auth (@supabase/ssr 0.12): email + password sign-up/in/out, email confirmation, password reset; role-based dashboard protection (**Step 4B**) | Dietitian verification flow (Step 7), MFA for admins |
 | Payments | — | Razorpay behind a provider abstraction |
 | AI | — | OpenAI API, RAG, usage credits |
 | Deployment | — | Docker, Traefik, Hostinger Ubuntu VPS, GitHub Actions |

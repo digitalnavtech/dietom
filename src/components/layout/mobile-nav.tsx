@@ -4,9 +4,10 @@
 // Keeping it small means the rest of the header stays a Server Component.
 
 import { useState } from "react";
+import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { mainNav } from "@/config/site";
 
 export function MobileNav() {
@@ -43,6 +44,14 @@ export function MobileNav() {
                 </a>
               </li>
             ))}
+            <li className="mt-2 grid grid-cols-2 gap-2 border-t pt-3">
+              <Link href="/sign-in" onClick={() => setOpen(false)} className={buttonVariants({ variant: "outline" })}>
+                Sign in
+              </Link>
+              <Link href="/sign-up" onClick={() => setOpen(false)} className={buttonVariants()}>
+                Create account
+              </Link>
+            </li>
           </ul>
         </nav>
       ) : null}

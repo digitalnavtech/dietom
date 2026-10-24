@@ -51,6 +51,4 @@ export const plannedPublicRoutes: PlannedRoute[] = [
   { label: "Pricing", path: "/pricing" },
   { label: "eBooks", path: "/ebooks" },
   { label: "Recipes", path: "/recipes" },
-  { label: "Sign in", path: "/sign-in" },
-  { label: "Sign up", path: "/sign-up" },
 ];

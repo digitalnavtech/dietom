@@ -74,10 +74,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Lists: parse URL params with `parseListQuery`, then filter → sort → paginate. Keep list state in the URL.
 - Sample/demo data lives only in `src/features/ui-kit/` and must be labelled fictional on screen.
 
-## Step 2 preview rules (until auth exists)
+## Dashboard rules (Step 4B+)
 
-- Dashboards are **public interface previews**. Every page shows `PreviewNotice`. No fake names, payments, health metrics or "secure" labels.
-- Preview routes are `noindex` and disallowed in `robots.ts`. Keep `previewOnlyPaths` in `src/config/site.ts` up to date.
+- Every dashboard page renders through `AreaGate` (via `DashboardPagePreview` / `DashboardOverview`), inside `<Suspense>`. New dashboard pages must do the same. Never gate only in a layout or only in the proxy.
+- Every Server Action / Route Handler serving a dashboard area calls `requireAreaAccess(area)` itself (pages being protected does not protect actions).
+- Area rules live in `src/lib/auth/area-access.ts` (`decideAreaAccess`): customer = customer role; dietitian = dietitian role + approved verification; admin = admin or super_admin; inactive accounts get nothing.
+- Redirect targets from URLs/forms always go through `getSafeRedirectPath()`. Email links are built from `siteConfig.url`, never from request headers.
+- Auth forms: shared Zod schemas in `src/features/auth/schemas.ts`, re-validated in `src/features/auth/actions.ts`. No role fields, ever. Don't reveal whether an email has an account.
+- Dashboards still show `PreviewNotice` until real features exist: no fake names, payments or health metrics. Preview routes stay `noindex` + disallowed in `robots.ts`.
 
 ## Security non-negotiables (from Step 2 onward)
 
